@@ -1,0 +1,300 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Combate às Mudanças Climáticas</title>
+    <style>
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+            height: 100vh;
+            margin: 0;
+            background-color: #e0f7fa;
+            font-family: Arial, sans-serif;
+            text-align: center;
+        }
+
+        header {
+            margin-bottom: 20px;
+            margin-top: 20px;
+            width: 100%;
+            text-align: center;
+        }
+
+        #gameContainer {
+            position: relative;
+            text-align: center;
+            border: 1px solid #000;
+            background-color: #ffffff;
+            height: 500px; /* Dimensão reduzida */
+            width: 360px; /* Mantém a largura do jogo */
+        }
+
+        canvas {
+            border: 1px solid #000;
+        }
+
+        #gameInfo {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            text-align: right;
+            color: #000;
+            font-size: 14px;
+            z-index: 5;
+        }
+
+        #highScores {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            text-align: left;
+            color: #000;
+            font-size: 14px;
+            z-index: 5;
+        }
+
+        #startButton, #restartButton {
+            padding: 10px 20px;
+            font-size: 16px;
+            cursor: pointer;
+            background-color: #00c853;
+            border: none;
+            color: white;
+            border-radius: 5px;
+            margin: 5px;
+        }
+
+        #restartButton {
+            display: inline; /* Torna o botão visível */
+            font-size: 24px; /* Ajusta o tamanho do emoji */
+            background-color: transparent; /* Remove o fundo do botão */
+            border: none; /* Remove a borda do botão */
+            color: #d32f2f; /* Define a cor do emoji */
+        }
+
+        .game-over-container {
+            display: none;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background-color: rgba(0, 0, 0, 0.7);
+            color: white;
+            padding: 20px;
+            border-radius: 5px;
+            z-index: 10;
+            text-align: center;
+        }
+
+        .game-over-container .game-over {
+            font-size: 24px;
+            margin-bottom: 10px;
+        }
+
+        .game-over-container button {
+            margin-top: 10px;
+        }
+
+        #instructions {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background-color: rgba(0, 0, 0, 0.7);
+            color: white;
+            padding: 20px;
+            border-radius: 5px;
+            display: none;
+        }
+
+        #adSpace {
+            margin-top: 20px;
+            width: 100%;
+            max-width: 360px; /* Mantém a largura do anúncio igual à largura do contêiner do jogo */
+            text-align: center;
+        }
+
+        #adSpace img {
+            width: 100%;
+            height: auto; /* Mantém a proporção do anúncio */
+            max-height: 200px; /* Ajuste a altura máxima para que o anúncio não ocupe muito espaço */
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>Seivus</h1>
+        <h2>200 pontos=1 árvore</h2>
+    </header>
+    <div id="gameContainer">
+        <canvas id="gameCanvas" width="360" height="400"></canvas> <!-- Dimensão reduzida do canvas -->
+        <div id="gameInfo">
+            <p id="score">Pontos: 0</p>
+            <p id="treesPlanted">Árvores Plantadas: 0</p>
+            <p id="phase">Fase: 1</p>
+        </div>
+        <div id="highScores">
+            <h3>Top 3 Pontuações</h3>
+            <p id="score1">1. 0</p>
+            <p id="score2">2. 0</p>
+            <p id="score3">3. 0</p>
+        </div>
+        <div class="game-over-container">
+            <div class="game-over">Game Over!</div>
+            <button id="restartButton">🔄</button>
+        </div>
+        <div id="instructions">
+            <p>Clique no lixo para eliminá-lo!</p>
+            <button id="startButtonInstructions">Começar Jogo</button>
+        </div>
+    </div>
+    <div class="divider"></div>
+    <div id="adSpace">
+            <img src='https://i.postimg.cc/2j4xTjhx/SIGA-20240807-034833-0000.png' border='0' alt='SIGA-20240807-025642-0003'/>
+        </a>
+    </div>
+    <script>
+        const canvas = document.getElementById("gameCanvas");
+        const context = canvas.getContext("2d");
+
+        let userScore = 0;
+        let treesPlanted = 0;
+        let phase = 1;
+        let lives = 7;
+        let gameStarted = false;
+        let gameOver = false;
+        let itemsPassed = 0;
+
+        const itemRadius = 30; // Aumentado para melhor clique
+        let items = [];
+        const tree = { emoji: "🌳", type: "tree" };
+        const trash = { emoji: "🗑️", type: "trash" };
+
+        function createItem() {
+            const item = Math.random() < 0.5 ? { ...tree } : { ...trash };
+            item.x = Math.random() * (canvas.width - itemRadius * 2) + itemRadius;
+            item.y = -itemRadius;
+            item.speed = 2 + phase * 0.5;
+            items.push(item);
+        }
+
+        function drawItems() {
+            items.forEach(item => {
+                context.font = "30px Arial";
+                context.textAlign = "center";
+                context.fillText(item.emoji, item.x, item.y + itemRadius);
+            });
+        }
+
+        function moveItems() {
+            items.forEach(item => {
+                item.y += item.speed;
+            });
+
+            const outOfBounds = items.filter(item => item.y > canvas.height);
+            outOfBounds.forEach(item => {
+                itemsPassed++;
+                if (itemsPassed % 200 === 0) {
+                    phase++;
+                    document.getElementById("phase").innerText = "Fase: " + phase;
+                }
+
+                if (item.type === "trash") {
+                    lives--;
+                    if (lives <= 0) {
+                        gameOver = true;
+                        document.querySelector(".game-over-container").style.display = 'flex';
+                        document.getElementById("instructions").style.display = 'none';
+                        updateHighScores(userScore);
+                    }
+                }
+            });
+
+            items = items.filter(item => item.y <= canvas.height);
+        }
+
+        function detectClicks(event) {
+            const rect = canvas.getBoundingClientRect();
+            const mouseX = event.clientX - rect.left;
+            const mouseY = event.clientY - rect.top;
+
+            items.forEach((item, index) => {
+                if (item.type === "trash" &&
+                    mouseX > item.x - itemRadius && mouseX < item.x + itemRadius &&
+                    mouseY > item.y - itemRadius && mouseY < item.y + itemRadius) {
+                    items.splice(index, 1);
+                    userScore++;
+                    document.getElementById("score").innerText = "Pontos: " + userScore;
+
+                    if (userScore % 200 === 0) {
+                        treesPlanted++;
+                        document.getElementById("treesPlanted").innerText = "Árvores Plantadas: " + treesPlanted;
+                        alert("Parabéns! Você ajudou a plantar uma árvore!");
+                    }
+                }
+            });
+        }
+
+        function updateHighScores(score) {
+            let highScores = JSON.parse(localStorage.getItem('highScores')) || [0, 0, 0];
+            highScores.push(score);
+            highScores.sort((a, b) => b - a);
+            highScores = highScores.slice(0, 3);
+            localStorage.setItem('highScores', JSON.stringify(highScores));
+
+            document.getElementById("score1").innerText = `1. ${highScores[0] || 0}`;
+            document.getElementById("score2").innerText = `2. ${highScores[1] || 0}`;
+            document.getElementById("score3").innerText = `3. ${highScores[2] || 0}`;
+        }
+
+        function updateGame() {
+            if (!gameStarted || gameOver) return;
+
+            context.clearRect(0, 0, canvas.width, canvas.height);
+            drawItems();
+            moveItems();
+
+            if (Math.random() < 0.03) {
+                createItem();
+            }
+
+            requestAnimationFrame(updateGame);
+        }
+
+        document.getElementById("startButtonInstructions").addEventListener("click", function () {
+            document.getElementById("instructions").style.display = 'none';
+            document.getElementById("startButtonInstructions").style.display = 'none';
+            gameStarted = true;
+            updateGame();
+        });
+
+        document.getElementById("restartButton").addEventListener("click", function () {
+            gameStarted = true;
+            gameOver = false;
+            document.querySelector(".game-over-container").style.display = 'none';
+            lives = 10;
+            userScore = 0;
+            treesPlanted = 0;
+            phase = 1;
+            itemsPassed = 0;
+            items = [];
+            document.getElementById("score").innerText = "Pontos: " + userScore;
+            document.getElementById("treesPlanted").innerText = "Árvores Plantadas: " + treesPlanted;
+            document.getElementById("phase").innerText = "Fase: " + phase;
+            updateGame();
+        });
+
+        canvas.addEventListener("click", detectClicks);
+
+        // Load high scores on page load
+        window.onload = function() {
+            updateHighScores(0);
+            document.getElementById("instructions").style.display = 'block';
+        };
+    </script>
+</body>
+</html>
