@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="pt-br">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -18,8 +18,8 @@
         }
 
         header {
-            margin-bottom: 10px;
-            margin-top: 10px;
+            margin-bottom: 5px;
+            margin-top: 5px;
             width: 100%;
             text-align: center;
         }
@@ -29,8 +29,9 @@
             text-align: center;
             border: 1px solid #000;
             background-color: #ffffff;
-            height: 400px; /* Dimensão reduzida */
-            width: 360px; /* Mantém a largura do jogo */
+            height: 400px;
+            width: 360px;
+            margin-bottom: 0;
         }
 
         canvas {
@@ -69,11 +70,11 @@
         }
 
         #restartButton {
-            display: inline; /* Torna o botão visível */
-            font-size: 24px; /* Ajusta o tamanho do emoji */
-            background-color: transparent; /* Remove o fundo do botão */
-            border: none; /* Remove a borda do botão */
-            color: #d32f2f; /* Define a cor do emoji */
+            display: inline;
+            font-size: 24px;
+            background-color: transparent;
+            border: none;
+            color: #d32f2f;
         }
 
         .game-over-container {
@@ -112,16 +113,16 @@
         }
 
         #adSpace {
-            margin-top: 10px;
+            margin-top: 5px;
             width: 100%;
-            max-width: 360px; /* Mantém a largura do anúncio igual à largura do contêiner do jogo */
+            max-width: 360px;
             text-align: center;
         }
 
         #adSpace img {
             width: 100%;
-            height: auto; /* Mantém a proporção do anúncio */
-            max-height: 200px; /* Ajuste a altura máxima para que o anúncio não ocupe muito espaço */
+            height: auto;
+            max-height: 200px;
         }
     </style>
 </head>
@@ -131,7 +132,7 @@
         <h2>200 pontos=1 árvore</h2>
     </header>
     <div id="gameContainer">
-        <canvas id="gameCanvas" width="360" height="400"></canvas> <!-- Dimensão reduzida do canvas -->
+        <canvas id="gameCanvas" width="360" height="400"></canvas>
         <div id="gameInfo">
             <p id="score">Pontos: 0</p>
             <p id="treesPlanted">Árvores Plantadas: 0</p>
@@ -154,8 +155,7 @@
     </div>
     <div class="divider"></div>
     <div id="adSpace">
-            <img src='https://i.postimg.cc/2j4xTjhx/SIGA-20240807-034833-0000.png' border='0' alt='SIGA-20240807-025642-0003'/>
-        </a>
+        <img src='https://i.postimg.cc/1zHnMqS2/SIGA-20240807-155931-0000.png' alt='Anúncio'>
     </div>
     <script>
         const canvas = document.getElementById("gameCanvas");
@@ -169,13 +169,20 @@
         let gameOver = false;
         let itemsPassed = 0;
 
-        const itemRadius = 30; // Aumentado para melhor clique
+        const itemRadius = 30; 
         let items = [];
         const tree = { emoji: "🌳", type: "tree" };
         const trash = { emoji: "🗑️", type: "trash" };
+        const treePhase2 = { emoji: "🌲", type: "tree" };
+        const fire = { emoji: "🔥", type: "trash" };
 
         function createItem() {
-            const item = Math.random() < 0.5 ? { ...tree } : { ...trash };
+            let item;
+            if (phase % 2 === 0) {
+                item = Math.random() < 0.5 ? { ...treePhase2 } : { ...fire };
+            } else {
+                item = Math.random() < 0.5 ? { ...tree } : { ...trash };
+            }
             item.x = Math.random() * (canvas.width - itemRadius * 2) + itemRadius;
             item.y = -itemRadius;
             item.speed = 2 + phase * 0.5;
@@ -203,7 +210,7 @@
                     document.getElementById("phase").innerText = "Fase: " + phase;
                 }
 
-                if (item.type === "trash") {
+                if (item.type === "trash" || item.type === "fire") {
                     lives--;
                     if (lives <= 0) {
                         gameOver = true;
@@ -223,7 +230,7 @@
             const mouseY = event.clientY - rect.top;
 
             items.forEach((item, index) => {
-                if (item.type === "trash" &&
+                if ((item.type === "trash" || item.type === "fire") &&
                     mouseX > item.x - itemRadius && mouseX < item.x + itemRadius &&
                     mouseY > item.y - itemRadius && mouseY < item.y + itemRadius) {
                     items.splice(index, 1);
@@ -258,41 +265,61 @@
             drawItems();
             moveItems();
 
-            if (Math.random() < 0.03) {
-                createItem();
-            }
-
             requestAnimationFrame(updateGame);
         }
 
-        document.getElementById("startButtonInstructions").addEventListener("click", function () {
-            document.getElementById("instructions").style.display = 'none';
-            document.getElementById("startButtonInstructions").style.display = 'none';
-            gameStarted = true;
-            updateGame();
-        });
+        document.getElementById("gameCanvas").addEventListener("click", detectClicks);
 
-        document.getElementById("restartButton").addEventListener("click", function () {
+        document.getElementById("startButtonInstructions").addEventListener("click", () => {
+            if (gameOver) {
+                document.querySelector(".game-over-container").style.display = 'none';
+            }
             gameStarted = true;
             gameOver = false;
-            document.querySelector(".game-over-container").style.display = 'none';
-            lives = 10;
+            items = [];
             userScore = 0;
             treesPlanted = 0;
             phase = 1;
+            lives = 7;
             itemsPassed = 0;
-            items = [];
             document.getElementById("score").innerText = "Pontos: " + userScore;
             document.getElementById("treesPlanted").innerText = "Árvores Plantadas: " + treesPlanted;
             document.getElementById("phase").innerText = "Fase: " + phase;
+            document.getElementById("instructions").style.display = 'none';
+            updateHighScores(0);
             updateGame();
         });
 
-        canvas.addEventListener("click", detectClicks);
+        document.getElementById("restartButton").addEventListener("click", () => {
+            gameStarted = false;
+            gameOver = true;
+            document.querySelector(".game-over-container").style.display = 'none';
+            document.getElementById("instructions").style.display = 'block';
+        });
 
-        // Load high scores on page load
-        window.onload = function() {
-            updateHighScores(0);
+        function createAd() {
+            const adImages = [
+                'https://i.postimg.cc/1zHnMqS2/SIGA-20240807-155931-0000.png',
+                'https://i.postimg.cc/LX8qW86X/SIGA-20240807-155932-0001.png',
+                'https://i.postimg.cc/HxvJ11Vt/SIGA-20240807-155932-0002.png',
+                'https://i.postimg.cc/XqZrV156/SIGA-20240807-155932-0003.png'
+            ];
+
+            const adSpace = document.getElementById('adSpace');
+            const adImage = document.createElement('img');
+            adImage.src = adImages[Math.floor(Math.random() * adImages.length)];
+            adImage.alt = 'Anúncio';
+            adSpace.innerHTML = '';
+            adSpace.appendChild(adImage);
+        }
+
+        setInterval(createAd, 10000);
+
+        createAd();
+        setInterval(createItem, 1000);
+        updateHighScores(0);
+
+        window.onload = () => {
             document.getElementById("instructions").style.display = 'block';
         };
     </script>
