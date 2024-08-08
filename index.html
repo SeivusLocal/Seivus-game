@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="pt-br">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -12,16 +12,21 @@
             flex-direction: column;
             height: 100vh;
             margin: 0;
-            background-color: #e0f7fa;
+            background-image: url('https://i.postimg.cc/TYkQtMp0/Design-sem-nome-20240807-213152-0000.png');
+            background-size: cover;
+            background-position: center;
             font-family: Arial, sans-serif;
             text-align: center;
         }
 
         header {
             margin-bottom: 5px;
-            margin-top: 5px;
+            margin-top: 8px;
             width: 100%;
             text-align: center;
+            background-color: rgb;
+            padding: 10px;
+            border-radius: 10px;
         }
 
         #gameContainer {
@@ -32,6 +37,7 @@
             height: 400px;
             width: 360px;
             margin-bottom: 0;
+            border-radius: 10px;
         }
 
         canvas {
@@ -123,14 +129,12 @@
             width: 100%;
             height: auto;
             max-height: 200px;
+            border-radius: 10px;
         }
     </style>
 </head>
 <body>
-    <header>
-        <h1>Seivus</h1>
-        <h2>200 pontos=1 árvore</h2>
-    </header>
+  <header></header>
     <div id="gameContainer">
         <canvas id="gameCanvas" width="360" height="400"></canvas>
         <div id="gameInfo">
@@ -149,7 +153,7 @@
             <button id="restartButton">🔄</button>
         </div>
         <div id="instructions">
-            <p>Clique no lixo ou fogo para ganhar!</p>
+            <p>Clique no lixo para eliminá-lo!</p>
             <button id="startButtonInstructions">Começar Jogo</button>
         </div>
     </div>
@@ -164,7 +168,7 @@
         let userScore = 0;
         let treesPlanted = 0;
         let phase = 1;
-        let lives = 5;
+        let lives = 7;
         let gameStarted = false;
         let gameOver = false;
         let itemsPassed = 0;
@@ -205,7 +209,7 @@
             const outOfBounds = items.filter(item => item.y > canvas.height);
             outOfBounds.forEach(item => {
                 itemsPassed++;
-                if (itemsPassed % 100 === 0) {
+                if (itemsPassed % 200 === 0) {
                     phase++;
                     document.getElementById("phase").innerText = "Fase: " + phase;
                 }
@@ -258,17 +262,16 @@
             document.getElementById("score3").innerText = `3. ${highScores[2] || 0}`;
         }
 
+        canvas.addEventListener("click", detectClicks);
+
         function updateGame() {
-            if (!gameStarted || gameOver) return;
-
-            context.clearRect(0, 0, canvas.width, canvas.height);
-            drawItems();
-            moveItems();
-
-            requestAnimationFrame(updateGame);
+            if (!gameOver) {
+                context.clearRect(0, 0, canvas.width, canvas.height);
+                drawItems();
+                moveItems();
+                requestAnimationFrame(updateGame);
+            }
         }
-
-        document.getElementById("gameCanvas").addEventListener("click", detectClicks);
 
         document.getElementById("startButtonInstructions").addEventListener("click", () => {
             if (gameOver) {
@@ -280,7 +283,7 @@
             userScore = 0;
             treesPlanted = 0;
             phase = 1;
-            lives = 5;
+            lives = 7;
             itemsPassed = 0;
             document.getElementById("score").innerText = "Pontos: " + userScore;
             document.getElementById("treesPlanted").innerText = "Árvores Plantadas: " + treesPlanted;
